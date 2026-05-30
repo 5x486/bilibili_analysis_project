@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}AI分析 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="page-heading">AI 分析</h2>
+    <p class="page-subheading">DeepSeek AI 驱动的智能内容分析</p>
+</div>
+
+<div class="flex flex-wrap gap-2 mb-6" id="ai-tabs">
+    <button class="tab-btn {% if analysis_type != 'up' and analysis_type != 'title' and analysis_type != 'tags' %}active{% endif %}"
+            onclick="switchTab('video')" id="tab-video">
+        <i class="fas fa-video text-[10px] mr-1.5"></i>视频诊断
+    </button>
+    <button class="tab-btn {% if analysis_type == 'up' %}active{% endif %}"
+            onclick="switchTab('up')" id="tab-up">
+        <i class="fas fa-user-astronaut text-[10px] mr-1.5"></i>UP主报告
+    </button>
+    <button class="tab-btn {% if analysis_type == 'title' %}active{% endif %}"
+            onclick="switchTab('title')" id="tab-title">
+        <i class="fas fa-heading text-[10px] mr-1.5"></i>标题生成
+    </button>
+    <button class="tab-btn {% if analysis_type == 'tags' %}active{% endif %}"
+            onclick="switchTab('tags')" id="tab-tags">
+        <i class="fas fa-tags text-[10px] mr-1.5"></i>标签生成
+    </button>
+</div>
+
+<div class="glass-card mb-6">
+    <form method="post" action="/home/ai/" id="ai-form">
+        {% csrf_token %}
+        <input type="hidden" name="analysis_type" id="input-analysis-type" value="{{ analysis_type|default:'video' }}">
+
+        <!-- 视频诊断 -->
+        <div id="fields-video" class="analysis-fields" {% if analysis_type == 'up' or analysis_type == 'title' or analysis_type == 'tags' %}style="display:none"{% endif %}>
+            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">视频数据输入</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div><label class="block text-xs text-gray-500 mb-1">标题</label><input type="text" name="title" class="neon-input" placeholder="视频标题"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">分区</label><input type="text" name="partition" class="neon-input" placeholder="例如：生活、游戏"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">时长（秒）</label><input type="number" name="duration" class="neon-input" placeholder="例如：600" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">播放量</label><input type="number" name="view_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">点赞数</label><input type="number" name="like_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">投币数</label><input type="number" name="coin_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">收藏数</label><input type="number" name="favorite_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">评论数</label><input type="number" name="comment_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">弹幕数</label><input type="number" name="danmaku_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">分享数</label><input type="number" name="share_count" class="neon-input" placeholder="0" value="0"></div>
+            </div>
+        </div>
+
+        <!-- UP主报告 -->
+        <div id="fields-up" class="analysis-fields" {% if analysis_type != 'up' %}style="display:none"{% endif %}>
+            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">UP主数据输入</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div><label class="block text-xs text-gray-500 mb-1">UP主名称</label><input type="text" name="up_name" class="neon-input" placeholder="UP主名称"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">粉丝数</label><input type="number" name="follower_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">视频数</label><input type="number" name="video_count" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">总播放量</label><input type="number" name="total_views" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">总点赞数</label><input type="number" name="total_likes" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">等级</label><input type="number" name="level" class="neon-input" placeholder="1-6" value="0" min="0" max="6"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">平均播放量</label><input type="number" name="avg_views" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">平均点赞数</label><input type="number" name="avg_likes" class="neon-input" placeholder="0" value="0"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">平均互动率</label><input type="number" name="avg_interaction_rate" class="neon-input" placeholder="0.0" value="0" step="0.01"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">最高播放视频</label><input type="text" name="top_video_title" class="neon-input" placeholder="表现最好的视频标题"></div>
+                <div><label class="block text-xs text-gray-500 mb-1">最佳发布时间</label><input type="text" name="best_hour" class="neon-input" placeholder="例如：20点"></div>
+            </div>
+        </div>
+
+        <!-- 标题生成 -->
+        <div id="fields-title" class="analysis-fields" {% if analysis_type != 'title' %}style="display:none"{% endif %}>
+            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">标题生成</h3>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">视频主题</label>
+                <input type="text" name="topic" class="neon-input max-w-lg" placeholder="输入视频主题，AI将生成吸引人的标题...">
+            </div>
+        </div>
+
+        <!-- 标签生成 -->
+        <div id="fields-tags" class="analysis-fields" {% if analysis_type != 'tags' %}style="display:none"{% endif %}>
+            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">标签生成</h3>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">视频主题</label>
+                <input type="text" name="topic" class="neon-input max-w-lg" placeholder="输入视频主题，AI将推荐高流量标签...">
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <button type="submit" class="neon-btn" id="btn-analyze">
+                <i class="fas fa-robot text-xs"></i>
+                <span>开始分析</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if result %}
+<div class="glass-card" id="ai-result">
+    <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 rounded-lg bg-[#7C3AED]/15 flex items-center justify-center">
+            <i class="fas fa-robot text-sm text-[#7C3AED]"></i>
+        </div>
+        <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">分析结果</h3>
+    </div>
+    <hr class="divider-pink">
+    <div class="prose prose-invert max-w-none mt-4">
+        <div class="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+            {{ result.analysis|default:result }}
+            <span class="typewriter-cursor"></span>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function switchTab(tab) {
+    document.getElementById('input-analysis-type').value = tab;
+    document.querySelectorAll('#ai-tabs .tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.querySelectorAll('.analysis-fields').forEach(function(field) { field.style.display = 'none'; });
+    var target = document.getElementById('fields-' + tab);
+    if (target) target.style.display = 'block';
+    gsap.fromTo('#fields-' + tab + ' .neon-input', { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.03, ease: 'power2.out' });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var result = document.getElementById('ai-result');
+    if (result) { gsap.fromTo(result, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', delay: 0.3 }); }
+    var form = document.getElementById('ai-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            var btn = document.getElementById('btn-analyze');
+            if (btn) {
+                btn.innerHTML = '<div class="loading-spinner" style="width:18px;height:18px;border-width:2px;margin:0 4px;"></div><span>分析中...</span>';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}排行榜 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="mb-6">
+    <h2 class="page-heading">排行榜</h2>
+    <p class="page-subheading">B站视频热门排行与周排行</p>
+</div>
+
+<!-- Tab Buttons -->
+<div class="flex gap-2 mb-6">
+    <a href="?type=all" class="tab-btn {% if list_type == 'all' %}active{% endif %}">
+        <i class="fas fa-fire text-[10px] mr-1.5"></i>全站排行
+    </a>
+    <a href="?type=popular" class="tab-btn {% if list_type == 'popular' %}active{% endif %}">
+        <i class="fas fa-chart-line text-[10px] mr-1.5"></i>热门
+    </a>
+    <a href="?type=weekly" class="tab-btn {% if list_type == 'weekly' %}active{% endif %}">
+        <i class="fas fa-calendar-week text-[10px] mr-1.5"></i>每周
+    </a>
+</div>
+
+<!-- Ranking Table -->
+<div class="glass-card">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+            {% if list_type == 'weekly' %}每周{% elif list_type == 'popular' %}热门{% else %}全站{% endif %}排行
+            <span class="text-xs text-gray-600 ml-2 normal-case">(共 {{ rankings|length }} 条)</span>
+        </h3>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="w-16 text-center">#</th>
+                    <th>视频ID (AVID)</th>
+                    <th>评分</th>
+                    <th>日期</th>
+                    <th>等级</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rankings %}
+                <tr>
+                    <td class="text-center">
+                        {% if r.rank == 1 %}
+                            <span class="rank-1"><i class="fas fa-crown rank-1-icon"></i> 1</span>
+                        {% elif r.rank == 2 %}
+                            <span class="rank-2"><i class="fas fa-medal rank-2-icon"></i> 2</span>
+                        {% elif r.rank == 3 %}
+                            <span class="rank-3"><i class="fas fa-medal rank-3-icon"></i> 3</span>
+                        {% else %}
+                            <span class="text-gray-500 font-medium">{{ r.rank }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="font-medium">{{ r.avid|default:"-" }}</span>
+                    </td>
+                    <td class="tabular-nums">
+                        <span class="{% if r.rank <= 3 %}font-semibold{% endif %}">{{ r.score|default:0 }}</span>
+                    </td>
+                    <td class="text-gray-500">{{ r.date|date:"Y-m-d"|default:"-" }}</td>
+                    <td>
+                        {% if r.rank <= 3 %}
+                            <span class="neon-badge neon-badge-pink">Top {{ r.rank }}</span>
+                        {% elif r.rank <= 10 %}
+                            <span class="neon-badge neon-badge-cyan">Top 10</span>
+                        {% elif r.rank <= 50 %}
+                            <span class="neon-badge neon-badge-green">Top 50</span>
+                        {% else %}
+                            <span class="text-xs text-gray-600">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-gray-600 py-12">
+                        <i class="fas fa-trophy text-3xl text-gray-700 block mb-3"></i>
+                        此分类暂无排行数据
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Legend Cards -->
+{% if rankings %}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+    <div class="glass-card text-center">
+        <div class="text-3xl mb-2"><i class="fas fa-crown rank-1-icon"></i></div>
+        <div class="rank-1">
+            {% with gold=rankings|first %}{% if gold.rank == 1 %}{{ gold.avid|default:"N/A" }}{% endif %}{% endwith %}
+        </div>
+        <div class="stat-label mt-1">金牌 - 评分：
+            {% with gold=rankings|first %}{% if gold.rank == 1 %}{{ gold.score|default:0 }}{% endif %}{% endwith %}
+        </div>
+    </div>
+    <div class="glass-card text-center">
+        <div class="text-3xl mb-2"><i class="fas fa-medal rank-2-icon"></i></div>
+        <div class="rank-2">
+            {% for r in rankings %}{% if r.rank == 2 %}{{ r.avid }}{% endif %}{% endfor %}
+        </div>
+        <div class="stat-label mt-1">银牌 - 评分：
+            {% for r in rankings %}{% if r.rank == 2 %}{{ r.score }}{% endif %}{% endfor %}
+        </div>
+    </div>
+    <div class="glass-card text-center">
+        <div class="text-3xl mb-2"><i class="fas fa-medal rank-3-icon"></i></div>
+        <div class="rank-3">
+            {% for r in rankings %}{% if r.rank == 3 %}{{ r.avid }}{% endif %}{% endfor %}
+        </div>
+        <div class="stat-label mt-1">铜牌 - 评分：
+            {% for r in rankings %}{% if r.rank == 3 %}{{ r.score }}{% endif %}{% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Ranking page - GSAP re-triggers on tab switch
+document.addEventListener('DOMContentLoaded', function() {
+    gsap.fromTo('.glass-card', {
+        opacity: 0, y: 16
+    }, {
+        opacity: 1, y: 0,
+        duration: 0.5,
+        stagger: 0.06,
+        ease: 'power2.out',
+        delay: 0.1
+    });
+});
+</script>
+{% endblock %}

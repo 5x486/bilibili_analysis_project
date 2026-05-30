@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}UP主分析 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="mb-6">
+    <h2 class="page-heading">UP主分析</h2>
+    <p class="page-subheading">搜索并分析B站UP主的频道数据</p>
+</div>
+
+<!-- Search Form -->
+<div class="glass-card mb-6">
+    <form method="get" action="/home/up/" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1 relative">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+            <input type="text" name="keyword" value="{{ keyword }}" class="neon-input pl-10" placeholder="按UP主名称搜索...">
+        </div>
+        <button type="submit" class="neon-btn whitespace-nowrap">
+            <i class="fas fa-search text-xs"></i>
+            <span>搜索</span>
+        </button>
+    </form>
+</div>
+
+{% if keyword %}
+<!-- Results Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <!-- UP主 List -->
+    <div class="glass-card lg:col-span-1">
+        <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            搜索结果
+            <span class="text-xs text-gray-600 ml-2 normal-case">(找到 {{ up_list|length }} 条)</span>
+        </h3>
+        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            {% for up in up_list %}
+            <a href="?keyword={{ keyword|urlencode }}&id={{ up.id }}"
+               class="flex items-center gap-3 p-3 rounded-lg border border-transparent hover:border-[#FB7299]/20 hover:bg-[#FB7299]/5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] {% if up_detail and up_detail.id == up.id %}border-[#FB7299]/30 bg-[#FB7299]/8{% endif %}">
+                {% if up.avatar %}
+                <img src="{{ up.avatar }}" alt="{{ up.name }}" class="w-10 h-10 rounded-full avatar-ring flex-shrink-0">
+                {% else %}
+                <div class="w-10 h-10 rounded-full bg-[#FB7299]/10 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user-astronaut text-sm text-[#FB7299]/50"></i>
+                </div>
+                {% endif %}
+                <div class="min-w-0">
+                    <div class="text-sm font-medium truncate">{{ up.name }}</div>
+                    <div class="text-[11px] text-gray-500">{{ up.follower_count|default:0 }} 粉丝</div>
+                </div>
+            </a>
+            {% empty %}
+            <p class="text-gray-600 text-sm text-center py-8">未找到与 "{{ keyword }}" 相关的UP主</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- UP主 Detail -->
+    <div class="lg:col-span-2">
+        {% if up_detail %}
+        <div class="glass-card">
+            <!-- UP主 Header -->
+            <div class="flex flex-col sm:flex-row items-start gap-4 mb-6">
+                {% if up_detail.avatar %}
+                <img src="{{ up_detail.avatar }}" alt="{{ up_detail.name }}" class="w-20 h-20 rounded-full avatar-ring flex-shrink-0">
+                {% else %}
+                <div class="w-20 h-20 rounded-full bg-[#FB7299]/10 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user-astronaut text-3xl text-[#FB7299]/40"></i>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold mb-1">{{ up_detail.name }}</h3>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        {% if up_detail.level %}
+                        <span class="neon-badge neon-badge-pink">Lv.{{ up_detail.level }}</span>
+                        {% endif %}
+                        {% if up_detail.official_verify %}
+                        <span class="neon-badge neon-badge-cyan"><i class="fas fa-check-circle text-[9px] mr-1"></i>{{ up_detail.official_verify }}</span>
+                        {% endif %}
+                    </div>
+                    {% if up_detail.signature %}
+                    <p class="text-xs text-gray-500 max-w-lg">{{ up_detail.signature }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                <div class="text-center p-3 rounded-lg bg-[#FB7299]/5 border border-[#FB7299]/10">
+                    <div class="stat-value text-lg pink">{{ up_detail.follower_count|default:0 }}</div>
+                    <div class="stat-label mt-1">粉丝数</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#00d4ff]/5 border border-[#00d4ff]/10">
+                    <div class="stat-value text-lg cyan">{{ up_detail.total_views|default:0 }}</div>
+                    <div class="stat-label mt-1">总播放量</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10">
+                    <div class="stat-value text-lg">{{ up_detail.total_likes|default:0 }}</div>
+                    <div class="stat-label mt-1">总点赞数</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/10">
+                    <div class="stat-value text-lg">{{ up_detail.video_count|default:0 }}</div>
+                    <div class="stat-label mt-1">视频数</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#EC4899]/5 border border-[#EC4899]/10">
+                    <div class="stat-value text-lg">{{ up_detail.following_count|default:0 }}</div>
+                    <div class="stat-label mt-1">关注数</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#10B981]/5 border border-[#10B981]/10">
+                    <div class="stat-value text-lg">{{ up_detail.mid|default:0 }}</div>
+                    <div class="stat-label mt-1">MID</div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="glass-card flex items-center justify-center h-64">
+            <p class="text-gray-600 text-sm">从列表中选择一个UP主查看详情</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="glass-card flex flex-col items-center justify-center py-16 text-center">
+    <div class="w-20 h-20 rounded-full bg-[#00d4ff]/8 flex items-center justify-center mb-4">
+        <i class="fas fa-user-astronaut text-3xl text-[#00d4ff]/40"></i>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-400 mb-2">搜索UP主</h3>
+    <p class="text-sm text-gray-600 max-w-md">输入名称搜索B站创作者并探索频道数据分析。</p>
+</div>
+{% endif %}
+
+<!-- Publish Hour Line Chart -->
+<div class="glass-card">
+    <div class="chart-box" id="chart-hour"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var hLabels = {{ hour_labels|safe }};
+    var hCounts = {{ hour_counts|safe }};
+    if (hLabels.length > 0) {
+        createLineChart('chart-hour', hLabels, hCounts, '视频发布时间分布');
+    }
+    window.addEventListener('resize', function() {
+        var dom = document.getElementById('chart-hour');
+        if (dom) {
+            var instance = echarts.getInstanceByDom(dom);
+            if (instance) instance.resize();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}视频分析 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="mb-6">
+    <h2 class="page-heading">视频分析</h2>
+    <p class="page-subheading">搜索并深入分析单个视频的详细数据</p>
+</div>
+
+<!-- Search Form -->
+<div class="glass-card mb-6">
+    <form method="get" action="/home/video/" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1 relative">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+            <input type="text" name="keyword" value="{{ keyword }}" class="neon-input pl-10" placeholder="按视频标题搜索...">
+        </div>
+        <button type="submit" class="neon-btn whitespace-nowrap">
+            <i class="fas fa-search text-xs"></i>
+            <span>搜索</span>
+        </button>
+    </form>
+</div>
+
+{% if keyword %}
+<!-- Results Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <!-- 搜索结果 List -->
+    <div class="glass-card lg:col-span-1">
+        <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+            搜索结果
+            <span class="text-xs text-gray-600 ml-2 normal-case">(找到 {{ videos|length }} 条)</span>
+        </h3>
+        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+            {% for video in videos %}
+            <a href="?keyword={{ keyword|urlencode }}&id={{ video.id }}"
+               class="block p-3 rounded-lg border border-transparent hover:border-[#FB7299]/20 hover:bg-[#FB7299]/5 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] {% if video_detail and video_detail.id == video.id %}border-[#FB7299]/30 bg-[#FB7299]/8{% endif %}">
+                <div class="text-sm font-medium truncate">{{ video.title }}</div>
+                <div class="flex items-center gap-3 mt-1.5 text-[11px] text-gray-500">
+                    <span><i class="fas fa-user text-[10px] mr-1"></i>{{ video.up_name|default:"未知" }}</span>
+                    <span><i class="fas fa-eye text-[10px] mr-1"></i>{{ video.view_count|default:0 }}</span>
+                    <span><i class="fas fa-heart text-[10px] mr-1"></i>{{ video.like_count|default:0 }}</span>
+                </div>
+            </a>
+            {% empty %}
+            <p class="text-gray-600 text-sm text-center py-8">未找到与 "{{ keyword }}" 相关的视频</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 视频详情 -->
+    <div class="lg:col-span-2">
+        {% if video_detail %}
+        <div class="glass-card">
+            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">视频详情</h3>
+
+            <!-- Video Info Header -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                {% if video_detail.cover_url %}
+                <img src="{{ video_detail.cover_url }}" alt="{{ video_detail.title }}" class="w-full sm:w-48 h-28 object-cover rounded-lg border border-[#FB7299]/10">
+                {% else %}
+                <div class="w-full sm:w-48 h-28 rounded-lg bg-[#0d0d2b] border border-[#FB7299]/10 flex items-center justify-center">
+                    <i class="fas fa-video text-3xl text-gray-700"></i>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold mb-2">{{ video_detail.title }}</h4>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <span class="neon-badge neon-badge-pink">{{ video_detail.partition|default:"未知" }}</span>
+                        <span class="neon-badge neon-badge-cyan">{{ video_detail.up_name|default:"未知UP主" }}</span>
+                        <span class="neon-badge neon-badge-green">{{ video_detail.duration|default:0 }}s</span>
+                    </div>
+                    {% if video_detail.description %}
+                    <p class="text-xs text-gray-500 mt-2 line-clamp-2">{{ video_detail.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="text-center p-3 rounded-lg bg-[#FB7299]/5 border border-[#FB7299]/10">
+                    <div class="stat-value text-xl pink">{{ video_detail.view_count|default:0 }}</div>
+                    <div class="stat-label mt-1">播放量</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#00d4ff]/5 border border-[#00d4ff]/10">
+                    <div class="stat-value text-xl cyan">{{ video_detail.like_count|default:0 }}</div>
+                    <div class="stat-label mt-1">点赞</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10">
+                    <div class="stat-value text-xl">{{ video_detail.coin_count|default:0 }}</div>
+                    <div class="stat-label mt-1">硬币</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#F59E0B]/5 border border-[#F59E0B]/10">
+                    <div class="stat-value text-xl">{{ video_detail.favorite_count|default:0 }}</div>
+                    <div class="stat-label mt-1">收藏</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#EC4899]/5 border border-[#EC4899]/10">
+                    <div class="stat-value text-xl">{{ video_detail.comment_count|default:0 }}</div>
+                    <div class="stat-label mt-1">评论</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#10B981]/5 border border-[#10B981]/10">
+                    <div class="stat-value text-xl">{{ video_detail.danmaku_count|default:0 }}</div>
+                    <div class="stat-label mt-1">弹幕</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#3B82F6]/5 border border-[#3B82F6]/10">
+                    <div class="stat-value text-xl">{{ video_detail.share_count|default:0 }}</div>
+                    <div class="stat-label mt-1">分享</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[#FB7299]/5 border border-[#FB7299]/10">
+                    <div class="stat-value text-xl">{{ video_detail.duration|default:0 }}s</div>
+                    <div class="stat-label mt-1">时长</div>
+                </div>
+            </div>
+
+            <!-- BVID/avid -->
+            <div class="flex flex-wrap gap-3 text-xs text-gray-600">
+                {% if video_detail.bvid %}<span>BVID: <code class="text-gray-400">{{ video_detail.bvid }}</code></span>{% endif %}
+                {% if video_detail.avid %}<span>AVID: <code class="text-gray-400">{{ video_detail.avid }}</code></span>{% endif %}
+                {% if video_detail.publish_time %}<span>发布时间： <code class="text-gray-400">{{ video_detail.publish_time|date:"Y-m-d H:i" }}</code></span>{% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="glass-card flex items-center justify-center h-64">
+            <p class="text-gray-600 text-sm">从列表中选择一个视频查看详情</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="glass-card flex flex-col items-center justify-center py-16 text-center">
+    <div class="w-20 h-20 rounded-full bg-[#FB7299]/8 flex items-center justify-center mb-4">
+        <i class="fas fa-search text-3xl text-[#FB7299]/40"></i>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-400 mb-2">搜索视频</h3>
+    <p class="text-sm text-gray-600 max-w-md">输入关键词搜索B站视频并查看详细数据分析。</p>
+</div>
+{% endif %}
+
+<!-- Duration Distribution Chart -->
+<div class="glass-card">
+    <div class="chart-box" id="chart-duration"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var dNames = {{ duration_names|safe }};
+    var dCounts = {{ duration_counts|safe }};
+    if (dNames.length > 0) {
+        createBarChart('chart-duration', dNames, dCounts, '视频时长分布');
+    }
+    window.addEventListener('resize', function() {
+        var dom = document.getElementById('chart-duration');
+        if (dom) {
+            var instance = echarts.getInstanceByDom(dom);
+            if (instance) instance.resize();
+        }
+    });
+});
+</script>
+{% endblock %}

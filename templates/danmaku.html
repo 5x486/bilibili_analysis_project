@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}弹幕分析 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="mb-6">
+    <h2 class="page-heading">弹幕分析</h2>
+    <p class="page-subheading">实时弹幕可视化与情感分析</p>
+</div>
+
+<!-- Danmaku Canvas + Controls -->
+<div class="glass-card mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">实时弹幕流</h3>
+        <div class="flex gap-2">
+            <button id="btn-start-danmaku" class="neon-btn neon-btn-sm">
+                <i class="fas fa-play text-[10px]"></i>
+                <span>开始</span>
+            </button>
+            <button id="btn-stop-danmaku" class="neon-btn-outline neon-btn-sm">
+                <i class="fas fa-stop text-[10px]"></i>
+                <span>停止</span>
+            </button>
+        </div>
+    </div>
+    <canvas id="danmaku-canvas" class="danmaku-canvas"></canvas>
+</div>
+
+<!-- Sentiment Stat Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="glass-card flex items-center gap-4 border-l-2 border-l-[#10B981]">
+        <div class="stat-icon-box" style="background:rgba(16,185,129,0.12); color:#10B981;">
+            <i class="fas fa-smile"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="background:linear-gradient(135deg,#10B981,#34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">{{ positive }}</div>
+            <div class="stat-label">正面</div>
+        </div>
+    </div>
+    <div class="glass-card flex items-center gap-4 border-l-2 border-l-[#F59E0B]">
+        <div class="stat-icon-box" style="background:rgba(245,158,11,0.12); color:#F59E0B;">
+            <i class="fas fa-meh"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="background:linear-gradient(135deg,#F59E0B,#FBBF24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">{{ neutral }}</div>
+            <div class="stat-label">中性</div>
+        </div>
+    </div>
+    <div class="glass-card flex items-center gap-4 border-l-2 border-l-[#EF4444]">
+        <div class="stat-icon-box" style="background:rgba(239,68,68,0.12); color:#EF4444;">
+            <i class="fas fa-frown"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="background:linear-gradient(135deg,#EF4444,#f87171); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">{{ negative }}</div>
+            <div class="stat-label">负面</div>
+        </div>
+    </div>
+</div>
+
+<!-- Word Frequency Chart -->
+<div class="glass-card mb-6">
+    <div class="chart-box chart-box-lg" id="chart-word-freq"></div>
+</div>
+
+<!-- Danmaku Data Table -->
+<div class="glass-card">
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+        弹幕数据
+        <span class="text-xs text-gray-600 ml-2 normal-case">(第 {{ page_obj.number }} 页 / 共 {{ page_obj.paginator.num_pages }} 页)</span>
+    </h3>
+    <div class="overflow-x-auto">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>内容</th>
+                    <th>视频时间</th>
+                    <th>发送时间</th>
+                    <th>类型</th>
+                    <th>字体大小</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dm in page_obj %}
+                <tr>
+                    <td class="text-gray-600 text-xs">{{ dm.id }}</td>
+                    <td class="max-w-[300px] truncate">{{ dm.content }}</td>
+                    <td class="tabular-nums">{{ dm.video_time|default:"-" }}s</td>
+                    <td>{{ dm.send_time|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                    <td>{{ dm.dm_type|default:"-" }}</td>
+                    <td class="tabular-nums">{{ dm.font_size|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-gray-600 py-8">暂无弹幕数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}"><i class="fas fa-chevron-left text-[10px]"></i></a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="current">{{ num }}</span>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <a href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"><i class="fas fa-chevron-right text-[10px]"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/danmaku.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Word Frequency Bar Chart
+    var wordData = {{ word_data|safe }};
+    var chartDom = document.getElementById('chart-word-freq');
+    if (wordData.length > 0) {
+        // Support both [[word, count], ...] and [{name, value}, ...] formats
+        var labels = wordData.map(function(item) {
+            return Array.isArray(item) ? item[0] : (item.name || item.word || item[0]);
+        }).slice(0, 20);
+        var values = wordData.map(function(item) {
+            return Array.isArray(item) ? item[1] : (item.value || item.count || item[1]);
+        }).slice(0, 20);
+        // Only render if we have valid labels
+        if (labels.filter(function(l) { return l !== undefined && l !== null; }).length > 0) {
+            createBarChart('chart-word-freq', labels, values, '弹幕词频 Top 20');
+        } else if (chartDom) {
+            chartDom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">暂无词频数据，请确认已运行 NLP 分析</div>';
+        }
+    } else if (chartDom) {
+        // 显示暂无数据提示
+        chartDom.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:14px;">暂无弹幕数据，请先采集弹幕</div>';
+    }
+
+
+
+
+    // Danmaku Engine
+    var engine = new DanmakuEngine('danmaku-canvas');
+
+    document.getElementById('btn-start-danmaku').addEventListener('click', function() {
+        engine.start(350);
+    });
+
+    document.getElementById('btn-stop-danmaku').addEventListener('click', function() {
+        engine.stop();
+    });
+
+    // Auto-start danmaku
+    engine.start(350);
+
+    // Resize
+    window.addEventListener('resize', function() {
+        var dom = document.getElementById('chart-word-freq');
+        if (dom) {
+            var instance = echarts.getInstanceByDom(dom);
+            if (instance) instance.resize();
+        }
+    });
+});
+</script>
+{% endblock %}

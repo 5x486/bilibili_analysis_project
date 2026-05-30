@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}仪表盘 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="mb-6">
+    <h2 class="page-heading">数据概览</h2>
+    <p class="page-subheading">B站视频数据全景仪表盘</p>
+</div>
+
+<!-- Stat Cards Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Total Videos -->
+    <div class="glass-card flex items-center gap-4">
+        <div class="stat-icon-box pink">
+            <i class="fas fa-video"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_videos }}</div>
+            <div class="stat-label">视频总数</div>
+        </div>
+    </div>
+
+    <!-- 总播放量 -->
+    <div class="glass-card flex items-center gap-4">
+        <div class="stat-icon-box cyan">
+            <i class="fas fa-eye"></i>
+        </div>
+        <div>
+            <div class="stat-value cyan">{{ total_views }}</div>
+            <div class="stat-label">总播放量</div>
+        </div>
+    </div>
+
+    <!-- Total Likes -->
+    <div class="glass-card flex items-center gap-4">
+        <div class="stat-icon-box purple">
+            <i class="fas fa-heart"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ total_likes }}</div>
+            <div class="stat-label">总点赞数</div>
+        </div>
+    </div>
+
+    <!-- Max Views -->
+    <div class="glass-card flex items-center gap-4">
+        <div class="stat-icon-box gold">
+            <i class="fas fa-fire"></i>
+        </div>
+        <div>
+            <div class="stat-value pink">{{ max_views }}</div>
+            <div class="stat-label">最高播放量（单视频）</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <!-- Top Videos Bar Chart -->
+    <div class="glass-card">
+        <div class="chart-box" id="chart-top-videos"></div>
+    </div>
+
+    <!-- Partition Distribution Pie Chart -->
+    <div class="glass-card">
+        <div class="chart-box" id="chart-partition"></div>
+    </div>
+</div>
+
+<!-- Top UP主 Section -->
+{% if top_ups %}
+<div class="glass-card mb-6">
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Top UP主</h3>
+    <div class="overflow-x-auto">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>UP主</th>
+                    <th>粉丝数</th>
+                    <th>视频数</th>
+                    <th>总播放量</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for up in top_ups %}
+                <tr>
+                    <td class="font-medium">{{ up.0 }}</td>
+                    <td>{{ up.1 }}</td>
+                    <td>{{ up.2 }}</td>
+                    <td>{{ up.3 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Data Table -->
+<div class="glass-card">
+    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
+        全部视频数据
+        <span class="text-xs text-gray-600 ml-2 normal-case">(第 {{ page_obj.number }} 页 / 共 {{ page_obj.paginator.num_pages }} 页)</span>
+    </h3>
+    <div class="overflow-x-auto">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>标题</th>
+                    <th>UP主</th>
+                    <th>分区</th>
+                    <th>播放量</th>
+                    <th>点赞</th>
+                    <th>硬币</th>
+                    <th>弹幕</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for video in page_obj %}
+                <tr>
+                    <td class="text-gray-600 text-xs">{{ video.id }}</td>
+                    <td class="max-w-[200px] truncate font-medium">{{ video.title }}</td>
+                    <td>{{ video.up_name|default:"-" }}</td>
+                    <td>{{ video.partition|default:"-" }}</td>
+                    <td class="tabular-nums">{{ video.view_count|default:0 }}</td>
+                    <td class="tabular-nums">{{ video.like_count|default:0 }}</td>
+                    <td class="tabular-nums">{{ video.coin_count|default:0 }}</td>
+                    <td class="tabular-nums">{{ video.danmaku_count|default:0 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-gray-600 py-8">暂无数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}"><i class="fas fa-chevron-left text-[10px]"></i></a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="current">{{ num }}</span>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <a href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"><i class="fas fa-chevron-right text-[10px]"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/charts.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Top Videos Bar Chart
+    var titles = {{ chart_titles|safe }};
+    var views = {{ chart_views|safe }};
+    if (titles.length > 0) {
+        createBarChart('chart-top-videos', titles, views, '播放量 Top 10 视频');
+    }
+
+    // Partition Distribution Pie Chart
+    var pNames = {{ partition_names|safe }};
+    var pCounts = {{ partition_counts|safe }};
+    if (pNames.length > 0) {
+        var pieData = pNames.map(function(name, i) {
+            return { name: name, value: pCounts[i] };
+        });
+        createPieChart('chart-partition', pieData, '分区分布');
+    }
+
+    // Resize charts on window resize
+    window.addEventListener('resize', function() {
+        var ids = ['chart-top-videos', 'chart-partition'];
+        ids.forEach(function(id) {
+            var dom = document.getElementById(id);
+            if (dom) {
+                var instance = echarts.getInstanceByDom(dom);
+                if (instance) instance.resize();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

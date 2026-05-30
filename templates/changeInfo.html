@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}个人设置 - BiliAnalytics{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="page-heading">个人设置</h2>
+    <p class="page-subheading">管理您的账户信息与头像</p>
+</div>
+
+{% if messages %}
+<ul class="message-list max-w-lg">
+    {% for message in messages %}
+    <li class="message-item {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="max-w-lg mx-auto">
+    <div class="glass-card relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-[#FB7299]/6 blur-3xl pointer-events-none"></div>
+
+        <!-- 头像区域 -->
+        <div class="flex flex-col items-center mb-8 relative z-10">
+            <div class="relative mb-4 group">
+                {% if userInfo.avatar and userInfo.avatar.url %}
+                <img src="{{ userInfo.avatar.url }}" alt="头像" class="w-24 h-24 rounded-full avatar-ring object-cover">
+                {% else %}
+                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-[#FB7299]/15 to-[#00d4ff]/10
+                            flex items-center justify-center
+                            border-2 border-[#FB7299]/15">
+                    <i class="fas fa-user text-3xl text-[#FB7299]/30"></i>
+                </div>
+                {% endif %}
+                <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 cursor-pointer">
+                    <i class="fas fa-camera text-white text-lg"></i>
+                </div>
+            </div>
+            <h3 class="text-lg font-semibold">{{ userInfo.username }}</h3>
+            <p class="text-xs text-gray-600 mt-1">注册于 {{ userInfo.createTime|date:"Y-m-d" }}</p>
+        </div>
+
+        <hr class="divider-pink">
+
+        <form method="post" action="/home/changeInfo/" enctype="multipart/form-data" class="space-y-5 relative z-10">
+            {% csrf_token %}
+
+            <!-- 头像上传 -->
+            <div>
+                <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">头像</label>
+                <input type="file" name="avatar" accept="image/*"
+                       class="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4
+                              file:rounded-lg file:border-0 file:text-xs file:font-semibold
+                              file:bg-[#FB7299]/15 file:text-[#FB7299]
+                              hover:file:bg-[#FB7299]/25 file:cursor-pointer
+                              file:transition-all file:duration-500">
+            </div>
+
+            <!-- 用户名 -->
+            <div>
+                <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">用户名</label>
+                <div class="relative">
+                    <i class="fas fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+                    <input type="text" name="username" value="{{ userInfo.username }}" class="neon-input pl-10">
+                </div>
+            </div>
+
+            <!-- 修改密码 -->
+            <div class="pt-2">
+                <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">修改密码</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">当前密码</label>
+                        <div class="relative">
+                            <i class="fas fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+                            <input type="password" name="old_password" class="neon-input pl-10" placeholder="请输入当前密码">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">新密码</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+                            <input type="password" name="new_password" class="neon-input pl-10" placeholder="至少6位字符">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">确认新密码</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 text-sm"></i>
+                            <input type="password" name="confirm_password" class="neon-input pl-10" placeholder="请再次输入新密码">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="neon-btn w-full text-sm py-3">
+                <i class="fas fa-save text-xs"></i>
+                <span>保存修改</span>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    gsap.fromTo('.glass-card', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' });
+});
+</script>
+{% endblock %}

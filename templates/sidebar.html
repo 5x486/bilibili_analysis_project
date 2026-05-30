@@ -1,0 +1,71 @@
+<aside class="fixed left-0 top-0 h-full w-60 z-20 flex flex-col
+              bg-[#0d0d2b]/85 backdrop-blur-2xl
+              border-r border-[#FB7299]/15
+              shadow-2xl shadow-[#FB7299]/5" id="sidebar">
+    <!-- Logo Area -->
+    <div class="p-5 border-b border-[#FB7299]/10">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FB7299] to-[#FF6B9D]
+                        flex items-center justify-center
+                        shadow-lg shadow-[#FB7299]/25
+                        animate-pulse" style="animation-duration: 3s;">
+                <i class="fas fa-play text-white text-sm ml-0.5"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-[#FB7299] to-[#00d4ff]
+                           bg-clip-text text-transparent">BiliAnalytics</h1>
+                <p class="text-[10px] text-gray-500 tracking-wider uppercase">B站数据工作台</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 py-5 px-3 space-y-1 overflow-y-auto">
+        <a href="/home/index/" class="nav-link group {% if '/index' in request.path %}active{% endif %}">
+            <i class="fas fa-chart-pie w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>数据概览</span>
+            {% if '/index' in request.path %}<span class="nav-dot"></span>{% endif %}
+        </a>
+        <a href="/home/video/" class="nav-link group {% if '/video' in request.path %}active{% endif %}">
+            <i class="fas fa-video w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>视频分析</span>
+        </a>
+        <a href="/home/up/" class="nav-link group {% if '/up' in request.path %}active{% endif %}">
+            <i class="fas fa-user-astronaut w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>UP主分析</span>
+        </a>
+        <a href="/home/danmaku/" class="nav-link group {% if '/danmaku' in request.path %}active{% endif %}">
+            <i class="fas fa-comment-dots w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>弹幕分析</span>
+        </a>
+        <a href="/home/ranking/" class="nav-link group {% if '/ranking' in request.path %}active{% endif %}">
+            <i class="fas fa-trophy w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>排行榜</span>
+        </a>
+        <a href="/home/ai/" class="nav-link group {% if '/ai' in request.path %}active{% endif %}">
+            <i class="fas fa-robot w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>AI分析</span>
+        </a>
+        <a href="/home/predict/" class="nav-link group {% if '/predict' in request.path %}active{% endif %}">
+            <i class="fas fa-crystal-ball w-5 text-center text-sm opacity-70 group-hover:opacity-100 transition-opacity duration-500"></i>
+            <span>预测模型</span>
+        </a>
+    </nav>
+
+    <!-- Bottom Actions -->
+    <div class="p-4 border-t border-[#FB7299]/10 space-y-1">
+        <a href="/home/changeInfo/" class="nav-link text-sm">
+            <i class="fas fa-cog w-5 text-center opacity-60"></i>
+            <span>个人设置</span>
+        </a>
+        <a href="/home/logout/" class="nav-link text-sm text-red-400/70 hover:text-red-300">
+            <i class="fas fa-sign-out-alt w-5 text-center opacity-60"></i>
+            <span>退出登录</span>
+        </a>
+        {% if request.session.username %}
+        <div class="text-[11px] text-gray-600 text-center pt-2 truncate">
+            {{ request.session.username }}
+        </div>
+        {% endif %}
+    </div>
+</aside>
