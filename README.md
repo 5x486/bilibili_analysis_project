@@ -74,6 +74,10 @@ mysql -u root -p -e "CREATE DATABASE bili_analysis CHARACTER SET utf8mb4 COLLATE
 export DB_HOST=localhost DB_NAME=bili_analysis DB_USER=root DB_PASSWORD=your_password
 export DEEPSEEK_API_KEY=sk-your-key
 export DJANGO_SECRET_KEY=your-secret-key
+# 本地开发可省略下面两行（默认 DEBUG=True、只允许本机访问）；
+# 公网部署时必须显式设置，并把 DEBUG 关掉。
+export DJANGO_DEBUG=False
+export DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 
 # 初始化
 python manage.py makemigrations video
