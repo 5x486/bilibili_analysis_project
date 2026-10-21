@@ -3,6 +3,7 @@ import json
 from collections import Counter
 
 import pandas as pd
+from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -12,20 +13,47 @@ import util
 from video.models import User, VideoData, UpData, DanmakuData, RankingData
 
 
+# ── Password Helpers ──
+# 以前 User.password 存的是明文，登录时直接拿明文比对。
+# 这在作品集里是硬伤：任何人拿到数据库就能看到密码，而且泄露后无法补救。
+# 现在统一用 Django 的密码哈希（PBKDF2），并保留对历史明文数据的兼容：
+# 老用户第一次登录成功后，会自动把明文升级成哈希，不需要重置密码。
+
+def _is_hashed(value):
+    """判断库里的密码是不是 Django 哈希（pbkdf2_sha256$... 这类格式）。"""
+    try:
+        identify_hasher(value or "")
+        return True
+    except Exception:
+        return False
+
+
+def verify_password(raw_password, stored_password):
+    """校验密码：哈希按 Django 规则校验，历史明文按等值比较。"""
+    if not stored_password:
+        return False
+    if _is_hashed(stored_password):
+        return check_password(raw_password or "", stored_password)
+    return stored_password == (raw_password or "")
+
+
 # ── Auth Views ──
 
 def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        try:
-            user = User.objects.get(username=username, password=password)
+        user = User.objects.filter(username=username).first()
+        if user and verify_password(password, user.password):
+            # 历史明文数据：登录成功后顺手升级为哈希，用户无感知。
+            if not _is_hashed(user.password):
+                user.password = make_password(password)
+                user.save(update_fields=['password'])
             request.session['username'] = username
             request.session['uid'] = user.id
             return redirect('/home/index/')
-        except User.DoesNotExist:
-            messages.error(request, '用户名或密码错误')
-            return HttpResponseRedirect('/home/login/')
+        messages.error(request, '用户名或密码错误')
+        return HttpResponseRedirect('/home/login/')
     return render(request, 'login.html')
 
 
@@ -33,14 +61,18 @@ def register(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        try:
-            User.objects.get(username=username)
+        if not username or not password:
+            messages.error(request, '用户名和密码不能为空')
+            return HttpResponseRedirect('/home/register/')
+        if len(password) < 6:
+            messages.error(request, '密码长度不能少于6位')
+            return HttpResponseRedirect('/home/register/')
+        if User.objects.filter(username=username).exists():
             messages.error(request, '用户已存在')
             return HttpResponseRedirect('/home/register/')
-        except User.DoesNotExist:
-            User.objects.create(username=username, password=password)
-            messages.success(request, '注册成功，请登录')
-            return HttpResponseRedirect('/home/login/')
+        User.objects.create(username=username, password=make_password(password))
+        messages.success(request, '注册成功，请登录')
+        return HttpResponseRedirect('/home/login/')
     return render(request, 'register.html')
 
 
@@ -356,7 +388,7 @@ def changeInfo(request):
             if not old_password:
                 messages.error(request, '修改密码需要输入旧密码')
                 return render(request, 'changeInfo.html', {'userInfo': userInfo})
-            if userInfo.password != old_password:
+            if not verify_password(old_password, userInfo.password):
                 messages.error(request, '旧密码不正确')
                 return render(request, 'changeInfo.html', {'userInfo': userInfo})
             if new_password != confirm_password:
@@ -365,7 +397,7 @@ def changeInfo(request):
             if len(new_password) < 6:
                 messages.error(request, '密码长度不能少于6位')
                 return render(request, 'changeInfo.html', {'userInfo': userInfo})
-            userInfo.password = new_password
+            userInfo.password = make_password(new_password)
 
         if avatar:
             userInfo.avatar = avatar
